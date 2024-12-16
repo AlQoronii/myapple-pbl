@@ -189,55 +189,53 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   // Update profile method
-Future<String?> updateProfile({
-  required String name,
-  required String email,
-}) async {
-  try {
-    final token = await _storage.read(key: 'auth_token');
-    if (token == null) {
-      return 'Token tidak ditemukan. Silakan login kembali.';
-    }
-
-    final response = await http.post(
-      Uri.parse('$baseUrl/user/update'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({
-        'name': name,
-        'email': email,
-      }),
-    );
-
-    print('Update Profile Response: ${response.body}'); // Debugging
-
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final userData = data['data'];
-      // Update the state with the new user data
-      state = state.copyWith(userData: userData);
-      
-      // Ambil pesan sukses dari response, jika ada
-      return data['message'] ?? 'Profil berhasil diperbarui.';
-    } else if (response.statusCode == 422) {
-      final data = jsonDecode(response.body);
-      final errors = data['errors'];
-      String errorMessage = 'Gagal memperbarui profil.';
-      if (errors != null && errors.isNotEmpty) {
-        errorMessage = errors.values.first[0];
+  Future<String?> updateProfile({
+    required String name,
+    required String email,
+  }) async {
+    try {
+      final token = await _storage.read(key: 'auth_token');
+      if (token == null) {
+        return 'Token tidak ditemukan. Silakan login kembali.';
       }
-      return errorMessage;
-    } else {
-      final data = jsonDecode(response.body);
-      return data['message'] ?? 'Gagal memperbarui profil.';
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/user/update'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'name': name,
+          'email': email,
+        }),
+      );
+
+      print('Update Profile Response: ${response.body}'); // Debugging
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final userData = data['data'];
+        // Update the state with the new user data
+        state = state.copyWith(userData: userData);
+        return null; // No error
+      } else if (response.statusCode == 422) {
+        final data = jsonDecode(response.body);
+        final errors = data['errors'];
+        String errorMessage = 'Gagal memperbarui profil.';
+        if (errors != null && errors.isNotEmpty) {
+          errorMessage = errors.values.first[0];
+        }
+        return errorMessage;
+      } else {
+        final data = jsonDecode(response.body);
+        return data['message'] ?? 'Gagal memperbarui profil.';
+      }
+    } catch (e) {
+      print('UpdateProfile Error: $e'); // Log the error for debugging
+      return 'Gagal terhubung ke server.';
     }
-  } catch (e) {
-    print('UpdateProfile Error: $e'); // Log the error for debugging
-    return 'Gagal terhubung ke server.';
   }
-}
 
   Future<String?> uploadPhotoProfile(
       Uint8List imageBytes, String fileName) async {
@@ -315,33 +313,22 @@ Future<String?> updateProfile({
       print('Update Password Response: ${response.body}'); // Debugging
 
       if (response.statusCode == 200) {
-        return null;
+        return null; // Success
       } else if (response.statusCode == 400 || response.statusCode == 422) {
         final data = jsonDecode(response.body);
-
-        if (data['errors'] != null && data['errors'] is Map) {
-          final errors = data['errors'] as Map<String, dynamic>;
-          if (errors.isNotEmpty) {
-            final firstKey = errors.keys.first;
-            final firstErrorMessages = errors[firstKey];
-            if (firstErrorMessages is List && firstErrorMessages.isNotEmpty) {
-              return firstErrorMessages[0];
-            }
-          }
-        }
-
-        // Jika tidak ada field 'errors'
         if (data['message'] != null) {
           return data['message'];
         }
-
+        if (data['errors'] != null && data['errors'].isNotEmpty) {
+          return data['errors'].values.first[0];
+        }
         return 'Gagal memperbarui password.';
       } else {
         final data = jsonDecode(response.body);
         return data['message'] ?? 'Gagal memperbarui password.';
       }
     } catch (e) {
-      print('UpdatePassword Error: $e');
+      print('UpdatePassword Error: $e'); // Log the error for debugging
       return 'Gagal terhubung ke server.';
     }
   }
