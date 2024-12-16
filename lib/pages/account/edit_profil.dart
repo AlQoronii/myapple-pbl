@@ -85,26 +85,39 @@ class _EditProfilState extends ConsumerState<EditProfil> {
       setState(() {
         isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
       return;
+    }
+
+    // Tampilkan pesan sukses untuk update profil
+    if (mounted && _pickedFile == null) { // Hanya tampilkan jika tidak ada foto yang diupload
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profil berhasil diperbarui')),
+      );
     }
 
     // Jika ada gambar yang dipilih, upload gambarnya
     if (_pickedFile != null) {
       final uploadError = await authNotifier.uploadPhotoProfile(
         _imageBytes!,
-        _pickedFile!.name, // Gunakan nama file asli
+        _pickedFile!.name,
       );
       if (uploadError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(uploadError)),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(uploadError)),
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Foto profil berhasil diperbarui.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Foto profil berhasil diperbarui')),
+          );
+        }
       }
     }
 
