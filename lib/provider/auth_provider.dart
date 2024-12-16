@@ -16,6 +16,7 @@ class AuthState {
   final bool isLoading;
   final String? token;
   final String? error;
+  final String? successMessage;
   final Map<String, dynamic>? userData;
 
   AuthState({
@@ -23,18 +24,21 @@ class AuthState {
     this.token,
     this.error,
     this.userData,
+    this.successMessage,
   });
 
   AuthState copyWith({
     bool? isLoading,
     String? token,
     String? error,
+    String? successMessage,
     Map<String, dynamic>? userData,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
       token: token ?? this.token,
       error: error ?? this.error,
+      successMessage: successMessage ?? this.successMessage,
       userData: userData ?? this.userData,
     );
   }
@@ -217,7 +221,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final data = jsonDecode(response.body);
         final userData = data['data'];
         // Update the state with the new user data
-        state = state.copyWith(userData: userData);
+        state = state.copyWith(
+        userData: userData,
+        successMessage: 'Profil berhasil diperbarui',
+        error: null, // Reset error
+      );
         return null; // No error
       } else if (response.statusCode == 422) {
         final data = jsonDecode(response.body);
